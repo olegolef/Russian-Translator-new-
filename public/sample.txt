@@ -1,0 +1,14 @@
+The quick brown fox jumps over the lazy dog. This is a sample text for testing the language translator application.
+
+Hello world! This application allows you to upload text files in various formats and translate individual words by clicking on them.
+
+The application supports multiple languages including English, German, Italian, and French. You can upload PDF, DOCX, TXT, and EPUB files.
+
+Each word in the text becomes clickable, and when you click on a word, a tooltip appears with the translation, transcription, and usage examples.
+
+This makes language learning more interactive and engaging. You can build your vocabulary by reading texts in foreign languages and getting instant translations.
+
+The interface is designed to be user-friendly with a modern Material UI design. The application uses Google Translate API and Yandex Translate API for accurate translations.
+
+Enjoy learning languages with this interactive translator!
+

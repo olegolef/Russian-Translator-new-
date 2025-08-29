@@ -1,13 +1,234 @@
-body {
+* {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Hover effects for clickable elements */
+.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.clickable:hover {
+  transform: scale(1.1);
+  background-color: #C0DBFF !important;
+  border-radius: 4px;
+}
+
+.clickable:disabled {
+  cursor: not-allowed;
+}
+
+.clickable:disabled:hover {
+  transform: none;
+  background-color: transparent !important;
+}
+
+/* Icon hover effects */
+.icon-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.icon-clickable:hover {
+  transform: scale(1.1);
+  background-color: #C0DBFF;
+}
+
+.icon-clickable:disabled {
+  cursor: not-allowed;
+}
+
+.icon-clickable:disabled:hover {
+  transform: none;
+  background-color: transparent;
+}
+
+/* Translation tooltip styles */
+.translation-tooltip {
+  background-color: white !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  mix-blend-mode: normal !important;
+  isolation: isolate !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  pointer-events: none !important; /* Отключаем события мыши на тултипе */
+  z-index: 9999 !important; /* Убеждаемся, что тултип поверх всего */
+  position: absolute !important;
+}
+
+/* Text formatting styles */
+.text-content {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  line-height: 1.8 !important;
+  text-align: justify !important;
+}
+
+/* Улучшенное отображение абзацев */
+.text-content .clickable {
+  display: inline !important;
+  margin: 0 1px !important;
+}
+
+/* Специальные стили для переносов строк */
+.text-content br {
+  display: block !important;
+  margin: 0.5em 0 !important;
+}
+
+/* Двойные переносы строк для абзацев */
+.text-content .paragraph-break {
+  display: block !important;
+  margin: 1em 0 !important;
+  height: 0.5em !important;
+}
+
+.translation-tooltip * {
+  opacity: 1 !important;
+  background-color: inherit !important;
+  pointer-events: none !important; /* Отключаем события мыши на всех элементах тултипа */
+}
+
+/* Отключаем hover эффекты для тултипа */
+.translation-tooltip:hover,
+.translation-tooltip *:hover {
+  opacity: 1 !important;
+  background-color: inherit !important;
+  transform: none !important;
+}
+
+/* Стили для основного контейнера текста - убраны для простоты */
+
+/* Убираем выделение контейнера текста */
+.text-content {
+  background-color: transparent !important;
+}
+
+/* Стили для панели форматирования */
+.formatting-panel {
+  background-color: white !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Стили для многострочных переводов в словаре */
+.dictionary-translations {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  min-height: 24px !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  padding: 6px !important;
+  background-color: #f8f9fa !important;
+  border-radius: 6px !important;
+  border: 1px solid #e9ecef !important;
+  margin-top: 0 !important;
+}
+
+.dictionary-translation-chip {
+  margin-bottom: 3px !important;
+  margin-right: 3px !important;
+  max-width: 280px !important;
+  word-wrap: break-word !important;
+  white-space: normal !important;
+  height: auto !important;
+  min-height: 20px !important;
+}
+
+.dictionary-translation-chip .MuiChip-label {
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.2 !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  text-align: left !important;
+}
+
+/* Стили для скролла в боковой панели словаря */
+.dictionary-scroll-container {
+  scrollbar-width: thin !important;
+  scrollbar-color: #c1c1c1 #f1f1f1 !important;
+}
+
+.dictionary-scroll-container::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.dictionary-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 3px !important;
+}
+
+.dictionary-scroll-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 3px !important;
+}
+
+.dictionary-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8 !important;
+}
+
+/* Стили для списка слов в словаре */
+.dictionary-scroll-container .MuiList-root {
+  padding: 0 !important;
+}
+
+.dictionary-scroll-container .MuiListItem-root {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 16px !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+  background-color: white !important;
+  margin-bottom: 8px !important;
+  margin-left: 8px !important;
+  margin-right: 8px !important;
+  border-radius: 4px !important;
+  position: relative !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dictionary-scroll-container .MuiListItem-root:last-child {
+  margin-bottom: 16px !important;
 }

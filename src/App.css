@@ -1,3 +1,4 @@
+/* Базовые стили приложения */
 .App {
   text-align: center;
 }
@@ -36,3 +37,165 @@
     transform: rotate(360deg);
   }
 }
+
+/* ПРОСТЫЕ СТИЛИ ОТЛАДКИ - ДОЛЖНЫ РАБОТАТЬ */
+.debug-toggle {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 999999 !important;
+  background: red !important;
+  color: white !important;
+  border: 2px solid black !important;
+  padding: 10px 15px !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+}
+
+/* Базовые стили для контейнеров отладки */
+.container-debug {
+  position: relative !important;
+}
+
+/* Скрытие обводок по умолчанию */
+.container-debug {
+  border: 5px solid transparent !important;
+}
+
+/* Показ обводок и названий в режиме отладки */
+.debug-mode .container-debug {
+  border: 5px solid red !important;
+}
+
+/* Подписи контейнеров */
+.debug-mode .container-debug::before {
+  content: attr(data-container-name) !important;
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  background: yellow !important;
+  color: white !important;
+  padding: 3px 5px !important;
+  font-size: 8px !important;
+  font-weight: bold !important;
+  border-radius: 8px !important;
+  z-index: 99999999 !important;
+  font-family: Arial, sans-serif !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+  border: 3px solid black !important;
+}
+
+/* Скрытие названий контейнеров по умолчанию */
+.container-debug::before {
+  display: none !important;
+}
+
+/* Цвета для разных типов контейнеров */
+.debug-mode .appbar-container {
+  border-color: red !important;
+}
+
+.debug-mode .appbar-container::before {
+  background: red !important;
+  content: "APPBAR" !important;
+}
+
+
+
+
+
+.debug-mode .container-content {
+  border-color: green !important;
+}
+
+.debug-mode .container-content::before {
+  background: green !important;
+  content: "CONTENT" !important;
+}
+
+.debug-mode .container-navigation {
+  border-color: yellow !important;
+}
+
+.debug-mode .container-navigation::before {
+  background: yellow !important;
+  color: black !important;
+  content: "TABS" !important;
+}
+
+
+
+.debug-mode .book-catalog-container {
+  border-color: purple !important;
+}
+
+.debug-mode .book-catalog-container::before {
+  background: purple !important;
+  content: "BOOK CATALOG" !important;
+}
+
+
+
+/* Дополнительные контейнеры */
+
+.debug-mode .text-content-container {
+  border-color: darkblue !important;
+}
+
+.debug-mode .text-content-container::before {
+  background: darkblue !important;
+  content: "TEXT CONTENT" !important;
+}
+
+
+
+.debug-mode .app-title-container {
+  border-color: darkgreen !important;
+}
+
+.debug-mode .app-title-container::before {
+  background: darkgreen !important;
+  content: "APP TITLE" !important;
+}
+
+/* Дополнительные контейнеры из компонентов */
+
+
+.debug-mode .book-catalog-paper {
+  border-color: brown !important;
+}
+
+.debug-mode .book-catalog-paper::before {
+  background: brown !important;
+  content: "BOOK CATALOG PAPER" !important;
+}
+
+.debug-mode .book-catalog-box {
+  border-color: indigo !important;
+}
+
+.debug-mode .book-catalog-box::before {
+  background: indigo !important;
+  content: "BOOK CATALOG BOX" !important;
+}
+
+.debug-mode .book-item-container {
+  border-color: lime !important;
+}
+
+.debug-mode .book-item-container::before {
+  background: lime !important;
+  color: black !important;
+  content: attr(data-container-name) !important;
+}
+
+
+
+
