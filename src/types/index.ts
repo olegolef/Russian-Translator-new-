@@ -17,6 +17,9 @@ export interface WordTranslation {
   meanings: string[];
   transcription?: string;
   examples?: string[];
+  partsOfSpeech?: string[];
+  synonyms?: string[];
+  antonyms?: string[];
 }
 
 export interface Translation {
@@ -38,6 +41,8 @@ export interface SelectedWord {
   originalWord: string;
   element: HTMLElement;
   wordId?: string; // Уникальный ID для слова
+  clickX?: number; // Позиция клика по X
+  clickY?: number; // Позиция клика по Y
 }
 
 export interface UserDictionaryWord {

@@ -11,12 +11,12 @@ import { WordTranslation } from '../types';
 
 interface TranslationTooltipProps {
   translation: WordTranslation | null;
-  position: { x: number; y: number } | null;
+  position: { x: number; y: number; width?: number } | null;
   isLoading: boolean;
   onClose: () => void;
 }
 
-const TranslationTooltip: React.FC<TranslationTooltipProps> = ({
+const TranslationTooltip: React.FC<TranslationTooltipProps> = React.memo(({
   translation,
   position,
   isLoading,
@@ -33,10 +33,10 @@ const TranslationTooltip: React.FC<TranslationTooltipProps> = ({
   }
 
   const tooltipStyle: React.CSSProperties = {
-    position: 'fixed', // Используем fixed для правильного позиционирования
+    position: 'absolute', // Используем absolute для правильного позиционирования
     left: position.x,
-    top: position.y, // Отступ уже учтен в TextReader
-    width: '480px', // Фиксированная ширина для лучшего центрирования
+    top: position.y,
+    width: position.width ? `${position.width}px` : '480px', // Используем переданную ширину или дефолтную
     minHeight: '80px',
     zIndex: 1000,
     backgroundColor: 'white',
@@ -44,30 +44,19 @@ const TranslationTooltip: React.FC<TranslationTooltipProps> = ({
     borderRadius: '8px',
     border: '1px solid #e0e0e0',
     padding: '16px',
-    fontFamily: 'Fira Sans, sans-serif'
+    fontFamily: 'Fira Sans, sans-serif',
+    maxHeight: '60vh', // Максимальная высота 60% от высоты экрана
+    overflow: 'auto', // Добавляем прокрутку если контент не помещается
+    display: 'block'
   };
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 999,
-        pointerEvents: 'auto' // Включаем события для обработки кликов
-      }}
-      onClick={handleClickOutside}
+    <Paper
+      elevation={3}
+      style={tooltipStyle}
+      onClick={(e) => e.stopPropagation()}
+      data-testid="translation-tooltip"
     >
-      <Paper
-        elevation={3}
-        style={{
-          ...tooltipStyle,
-          pointerEvents: 'auto' // Восстанавливаем события для самого тултипа
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
         {isLoading ? (
           <Box display="flex" alignItems="center" justifyContent="center" minHeight="80px">
             <CircularProgress size={24} />
@@ -169,10 +158,9 @@ const TranslationTooltip: React.FC<TranslationTooltipProps> = ({
             )}
           </Box>
         ) : null}
-      </Paper>
-    </div>
+    </Paper>
   );
-};
+});
 
 export default TranslationTooltip;
 

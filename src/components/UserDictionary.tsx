@@ -29,7 +29,7 @@ interface UserDictionaryProps {
   isOpen: boolean;
   onClose: () => void;
   words: UserDictionaryWord[];
-  onDeleteWord: (word: string) => void;
+  onDeleteWord: (wordId: string) => void;
   onUpdateWord: (updatedWord: UserDictionaryWord) => void;
   containerHeight: number; // Высота контейнера текста для позиционирования
   currentPage?: number; // Текущая страница для фильтрации слов
@@ -320,7 +320,10 @@ const UserDictionary: React.FC<UserDictionaryProps> = ({
                       <Tooltip title="Удалить из словаря">
                         <IconButton 
                           size="small" 
-                          onClick={() => onDeleteWord(userWord.word)}
+                          onClick={() => {
+                            console.log('Клик по иконке удаления для слова:', userWord.word, 'ID:', userWord.id);
+                            onDeleteWord(userWord.id);
+                          }}
                           sx={{ color: '#666' }}
                         >
                           <DeleteIcon fontSize="small" />

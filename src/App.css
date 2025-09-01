@@ -41,8 +41,8 @@
 /* ПРОСТЫЕ СТИЛИ ОТЛАДКИ - ДОЛЖНЫ РАБОТАТЬ */
 .debug-toggle {
   position: fixed !important;
-  top: 10px !important;
-  right: 10px !important;
+  bottom: 10px !important;
+  left: 10px !important;
   z-index: 999999 !important;
   background: red !important;
   color: white !important;
@@ -194,6 +194,57 @@
   background: lime !important;
   color: black !important;
   content: attr(data-container-name) !important;
+}
+
+/* Стили для слов, доступных для перевода */
+.word-for-translation:hover {
+  background-color: rgba(25, 118, 210, 0.1) !important;
+}
+
+/* Анимация для уведомлений */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Стили для выделений слов из словаря */
+.dictionary-word-highlight {
+  background-color: #FF9800 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 1px 2px !important;
+  border-radius: 2px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.dictionary-word-highlight:hover {
+  background-color: #F57C00 !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+/* Стили для комментариев (приоритет выше) */
+.comment-highlight {
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  font-weight: normal !important;
 }
 
 

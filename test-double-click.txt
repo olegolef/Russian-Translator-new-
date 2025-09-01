@@ -1,0 +1,40 @@
+# Test Document for Double Click Functionality
+
+## Introduction
+
+This is a test document to verify that double-clicking on words adds them to the dictionary correctly.
+
+## Sample Text
+
+The quick brown fox jumps over the lazy dog. This sentence contains all the letters of the English alphabet.
+
+### Common Words
+
+Here are some common English words that you can test:
+
+- **Hello** - A greeting
+- **World** - The planet we live on
+- **Computer** - An electronic device
+- **Language** - A system of communication
+- **Translation** - The process of converting text from one language to another
+
+### Technical Terms
+
+Some technical terms to test:
+
+- **Algorithm** - A step-by-step procedure
+- **Database** - A structured collection of data
+- **Interface** - A point of interaction
+- **Protocol** - A set of rules for communication
+- **Framework** - A software platform
+
+## Instructions
+
+1. Double-click on any word to add it to your dictionary
+2. Check that the word appears in the dictionary panel
+3. Verify that you get a notification when the word is added
+4. Try double-clicking the same word again - you should get a message that it's already in the dictionary
+
+## Conclusion
+
+This test document should help verify that the double-click functionality works correctly for adding words to the dictionary.

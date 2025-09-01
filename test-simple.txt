@@ -1,0 +1,9 @@
+Hello world!
+
+This is a simple test file for double-click functionality.
+
+Test words: apple, book, computer, dog, elephant.
+
+Each word should be added to the dictionary when double-clicked.
+
+Try double-clicking on any word in this text.

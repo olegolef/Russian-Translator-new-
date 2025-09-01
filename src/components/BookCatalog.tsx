@@ -118,8 +118,10 @@ const BookCatalog: React.FC<BookCatalogProps> = ({
           variant="h4"
           style={{
             fontFamily: 'Montserrat, sans-serif',
-            fontWeight: 600,
-            color: '#1976d2'
+            fontWeight: 700,
+            color: '#1565c0',
+            fontSize: '28px',
+            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
           }}
         >
           Каталог книг ({books.length})

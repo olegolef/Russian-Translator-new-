@@ -110,44 +110,107 @@ export class FileService {
             
             // Обрабатываем элементы текста с учетом их позиции и структуры
             let pageText = '';
+            
+            // Группируем элементы по строкам для лучшего анализа форматирования
+            const lines: Array<{text: string, y: number, fontSize: number, fontName: string}> = [];
             let currentLine = '';
+            let currentY = 0;
+            let currentFontSize = 0;
+            let currentFontName = '';
             
             textContent.items.forEach((item: any, index: number) => {
               if (item.str && item.str.trim()) {
-                const word = item.str.trim();
+                const itemY = item.transform[5];
+                const itemFontSize = item.height || 12;
+                const itemFontName = item.fontName || 'Arial';
                 
-                // Проверяем, нужно ли добавить пробел
-                if (currentLine && !currentLine.endsWith(' ') && !word.startsWith(' ')) {
-                  currentLine += ' ';
-                }
-                
-                currentLine += word;
-                
-                // Если это конец строки или последний элемент, добавляем перенос
-                if (index === textContent.items.length - 1) {
-                  pageText += currentLine + '\n';
-                  currentLine = '';
-                } else if ('transform' in item && item.transform && 
-                          index + 1 < textContent.items.length &&
-                          'transform' in textContent.items[index + 1] && 
-                          (textContent.items[index + 1] as any)?.transform) {
-                  const currentItem = item as any;
-                  const nextItem = textContent.items[index + 1] as any;
-                  const currentY = currentItem.transform[5];
-                  const nextY = nextItem.transform[5];
-                  
-                  // Если разница в Y координатах большая, это новый абзац
-                  const yDifference = Math.abs(currentY - nextY);
-                  if (yDifference > 20) { // Увеличиваем порог для определения абзацев
-                    pageText += currentLine + '\n\n';
-                    currentLine = '';
-                  } else if (yDifference > 5) { // Обычный перенос строки
-                    pageText += currentLine + '\n';
-                    currentLine = '';
+                // Если это новая строка
+                if (Math.abs(itemY - currentY) > 5) {
+                  if (currentLine.trim()) {
+                    lines.push({
+                      text: currentLine.trim(),
+                      y: currentY,
+                      fontSize: currentFontSize,
+                      fontName: currentFontName
+                    });
                   }
+                  currentLine = item.str;
+                  currentY = itemY;
+                  currentFontSize = itemFontSize;
+                  currentFontName = itemFontName;
+                } else {
+                  // Добавляем пробел между словами в той же строке
+                  if (currentLine && !currentLine.endsWith(' ')) {
+                    currentLine += ' ';
+                  }
+                  currentLine += item.str;
                 }
               }
             });
+            
+            // Добавляем последнюю строку
+            if (currentLine.trim()) {
+              lines.push({
+                text: currentLine.trim(),
+                y: currentY,
+                fontSize: currentFontSize,
+                fontName: currentFontName
+              });
+            }
+            
+            // Анализируем форматирование и создаем отформатированный текст
+            let formattedPageText = '';
+            let previousY = 0;
+            let isFirstLine = true;
+            
+            lines.forEach((line, index) => {
+              const yDifference = Math.abs(line.y - previousY);
+              
+              // Определяем заголовки по размеру шрифта и позиции
+              const isHeader = line.fontSize > 16 || 
+                              (line.fontSize > 14 && isFirstLine) ||
+                              line.text.toUpperCase() === line.text ||
+                              line.text.includes('CHAPTER') ||
+                              line.text.includes('ABOUT') ||
+                              line.text.includes('INTRODUCTION');
+              
+              // Определяем центрированный текст
+              const isCentered = line.text.length < 50 && 
+                                (line.text.includes('ABOUT') || 
+                                 line.text.includes('CHAPTER') ||
+                                 line.text.includes('PART'));
+              
+              if (isHeader) {
+                // Заголовок - добавляем отступы и выделение
+                if (!isFirstLine) formattedPageText += '\n\n';
+                formattedPageText += `# ${line.text}\n\n`;
+              } else if (isCentered) {
+                // Центрированный текст
+                if (!isFirstLine) formattedPageText += '\n\n';
+                formattedPageText += `## ${line.text}\n\n`;
+              } else {
+                // Обычный текст
+                if (yDifference > 30) {
+                  // Новый абзац
+                  if (!isFirstLine) formattedPageText += '\n\n';
+                  formattedPageText += line.text;
+                } else if (yDifference > 10) {
+                  // Продолжение абзаца
+                  formattedPageText += '\n' + line.text;
+                } else {
+                  // Та же строка
+                  if (formattedPageText && !formattedPageText.endsWith(' ')) {
+                    formattedPageText += ' ';
+                  }
+                  formattedPageText += line.text;
+                }
+              }
+              
+              previousY = line.y;
+              isFirstLine = false;
+            });
+            
+            pageText = formattedPageText;
             
             console.log(`Page ${i} extracted text:`, pageText.substring(0, 100) + '...');
             

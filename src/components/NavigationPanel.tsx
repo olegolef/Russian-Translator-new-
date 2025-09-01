@@ -6,15 +6,27 @@ import {
   Pagination,
   TextField,
   Button,
-  IconButton
+  IconButton,
+  Tooltip,
+  Divider
 } from '@mui/material';
 import {
-  FirstPage as FirstPageIcon,
-  LastPage as LastPageIcon,
-  NavigateBefore as PrevPageIcon,
+  KeyboardDoubleArrowUp as FirstPageIcon,
+  KeyboardDoubleArrowDown as LastPageIcon,
+  KeyboardArrowUp as UpIcon,
+  KeyboardArrowDown as DownIcon,
   NavigateNext as NextPageIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  FontDownload as FontIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon
 } from '@mui/icons-material';
+
+export interface FormattingOptions {
+  fontSize: number;
+  fontFamily: string;
+  containerHeight: number;
+}
 
 interface NavigationPanelProps {
   isOpen: boolean;
@@ -22,14 +34,29 @@ interface NavigationPanelProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  formattingOptions?: FormattingOptions;
+  onFormattingOptionsChange?: (options: FormattingOptions) => void;
 }
+
+
+const fontOptions = [
+  { value: 'Fira Sans, sans-serif', label: 'Fira Sans' },
+  { value: 'Montserrat, sans-serif', label: 'Montserrat' },
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Times New Roman, serif', label: 'Times New Roman' },
+  { value: 'Georgia, serif', label: 'Georgia' },
+  { value: 'Verdana, sans-serif', label: 'Verdana' },
+  { value: 'Courier New, monospace', label: 'Courier New' }
+];
 
 const NavigationPanel: React.FC<NavigationPanelProps> = ({
   isOpen,
   onClose,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  formattingOptions,
+  onFormattingOptionsChange
 }) => {
   const [goToPage, setGoToPage] = useState('');
 
@@ -47,162 +74,112 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
+  // Функции для форматирования
+
+
+  const increaseFontSize = () => {
+    console.log('increaseFontSize called');
+    if (!formattingOptions || !onFormattingOptionsChange) {
+      console.log('formattingOptions or onFormattingOptionsChange is null');
+      return;
+    }
+    const newSize = Math.min(formattingOptions.fontSize + 2, 32);
+    console.log('New font size:', newSize);
+    onFormattingOptionsChange({
+      ...formattingOptions,
+      fontSize: newSize
+    });
+  };
+
+  const decreaseFontSize = () => {
+    console.log('decreaseFontSize called');
+    if (!formattingOptions || !onFormattingOptionsChange) {
+      console.log('formattingOptions or onFormattingOptionsChange is null');
+      return;
+    }
+    const newSize = Math.max(formattingOptions.fontSize - 2, 10);
+    console.log('New font size:', newSize);
+    onFormattingOptionsChange({
+      ...formattingOptions,
+      fontSize: newSize
+    });
+  };
+
+  const handleFontFamilyChange = () => {
+    console.log('handleFontFamilyChange called');
+    console.log('formattingOptions:', formattingOptions);
+    console.log('onFormattingOptionsChange:', onFormattingOptionsChange);
+    
+    if (!formattingOptions || !onFormattingOptionsChange) {
+      console.log('formattingOptions or onFormattingOptionsChange is null');
+      return;
+    }
+    
+    console.log('fontOptions:', fontOptions);
+    console.log('current fontFamily:', formattingOptions.fontFamily);
+    
+    // Находим текущий индекс шрифта
+    const currentIndex = fontOptions.findIndex(font => font.value === formattingOptions.fontFamily);
+    console.log('currentIndex:', currentIndex);
+    
+    // Переходим к следующему шрифту (циклически)
+    const nextIndex = (currentIndex + 1) % fontOptions.length;
+    const newFontFamily = fontOptions[nextIndex].value;
+    
+    console.log('nextIndex:', nextIndex);
+    console.log('Changing font from', formattingOptions.fontFamily, 'to', newFontFamily);
+    
+    onFormattingOptionsChange({
+      ...formattingOptions,
+      fontFamily: newFontFamily
+    });
+  };
+
   return (
     <Drawer
       anchor="left"
       open={isOpen}
-      onClose={onClose}
-      variant="persistent"
+      variant="permanent"
       sx={{
-        width: 60,
+        width: 80,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 60,
+          width: 80,
           boxSizing: 'border-box',
-          backgroundColor: '#424242',
-          borderRight: '1px solid #616161'
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #e0e0e0',
+          position: 'fixed',
+          top: '64px',
+          height: 'calc(100vh - 64px)',
+          zIndex: 1200
         }
       }}
     >
-      {/* Заголовок панели */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 1,
-          borderBottom: '1px solid #616161',
-          backgroundColor: '#424242'
-        }}
-      >
-        <IconButton
-          onClick={onClose}
-          size="small"
-          sx={{ color: '#ffffff' }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
 
       {/* Содержимое панели */}
-      <Box sx={{ padding: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Текущая страница */}
-        <Box
-          sx={{
-            backgroundColor: '#616161',
-            borderRadius: 1,
-            padding: 1,
-            marginBottom: 1,
-            textAlign: 'center',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
+      <Box sx={{ 
+        padding: 1, 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        overflowY: 'auto',
+        alignItems: 'center'
+      }}>
+        {/* Быстрый переход - вверху */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', width: '100%' }}>
           <Typography
-            variant="body2"
+            variant="subtitle2"
             sx={{
+              color: '#1976d2',
+              fontSize: '10px',
+              fontWeight: 600,
               fontFamily: 'Montserrat, sans-serif',
-              fontWeight: 700,
-              color: '#ffffff',
-              fontSize: '12px'
-            }}
-          >
-            {currentPage}
-          </Typography>
-        </Box>
-
-        {/* Общее количество страниц */}
-        <Typography
-          variant="caption"
-          sx={{
-            fontFamily: 'Fira Sans, sans-serif',
-            color: '#bdbdbd',
-            fontSize: '10px',
-            marginBottom: 2
-          }}
-        >
-          {totalPages}
-        </Typography>
-
-        {/* Кнопки навигации */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-          {/* Первая страница */}
-          <IconButton
-            size="small"
-            onClick={() => onPageChange(1)}
-            disabled={currentPage === 1}
-            sx={{
-              color: currentPage === 1 ? '#616161' : '#ffffff',
-              padding: 0.5
-            }}
-          >
-            <FirstPageIcon fontSize="small" />
-          </IconButton>
-          
-          {/* Предыдущая страница */}
-          <IconButton
-            size="small"
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            sx={{
-              color: currentPage === 1 ? '#616161' : '#ffffff',
-              padding: 0.5
-            }}
-          >
-            <PrevPageIcon fontSize="small" />
-          </IconButton>
-          
-          {/* Следующая страница */}
-          <IconButton
-            size="small"
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            sx={{
-              color: currentPage === totalPages ? '#616161' : '#ffffff',
-              padding: 0.5
-            }}
-          >
-            <NextPageIcon fontSize="small" />
-          </IconButton>
-          
-          {/* Последняя страница */}
-          <IconButton
-            size="small"
-            onClick={() => onPageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            sx={{
-              color: currentPage === totalPages ? '#616161' : '#ffffff',
-              padding: 0.5
-            }}
-          >
-            <LastPageIcon fontSize="small" />
-          </IconButton>
-        </Box>
-
-        {/* Разделитель */}
-        <Box
-          sx={{
-            width: '40px',
-            height: '1px',
-            backgroundColor: '#616161',
-            margin: '8px 0'
-          }}
-        />
-
-        {/* Быстрый переход */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
-          <Typography
-            variant="caption"
-            sx={{
-              color: '#bdbdbd',
-              fontSize: '8px',
+              marginBottom: 1,
               textAlign: 'center'
             }}
           >
-            Переход
+            Быстрый переход
           </Typography>
           
           <TextField
@@ -212,40 +189,189 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             onChange={(e) => setGoToPage(e.target.value)}
             onKeyPress={handleKeyPress}
             sx={{
-              width: '40px',
+              width: '50px',
               '& .MuiInputBase-root': {
-                backgroundColor: '#616161',
+                backgroundColor: '#ffffff',
                 borderRadius: 1,
+                border: '1px solid #e0e0e0',
                 '& input': {
-                  color: '#ffffff',
-                  fontSize: '10px',
+                  color: '#333333',
+                  fontSize: '12px',
                   padding: '4px 6px',
                   textAlign: 'center'
                 },
                 '& fieldset': {
-                  borderColor: '#616161'
+                  borderColor: '#e0e0e0'
                 }
               }
             }}
           />
           
-                     <IconButton
-             size="small"
-             onClick={handleGoToPage}
-             disabled={!goToPage}
-             sx={{
-               color: !goToPage ? '#616161' : '#ffffff',
-               padding: 0.5
-             }}
-           >
-             <NextPageIcon fontSize="small" />
-           </IconButton>
-         </Box>
+          <IconButton
+            size="small"
+            onClick={handleGoToPage}
+            disabled={!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages}
+            sx={{
+              color: (!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages) ? '#bdbdbd' : '#333333',
+              padding: 0.5,
+              width: '40px',
+              height: '40px',
+              '&:hover': {
+                backgroundColor: (!goToPage || parseInt(goToPage, 10) < 1 || parseInt(goToPage, 10) > totalPages) ? 'transparent' : '#f0f0f0'
+              }
+            }}
+          >
+            <NextPageIcon fontSize="medium" />
+          </IconButton>
+
+          {/* Кнопки навигации по страницам */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', marginTop: 2 }}>
+          {/* Первая страница */}
+          <IconButton
+            size="small"
+            onClick={() => onPageChange(1)}
+            disabled={currentPage === 1}
+            sx={{
+              color: currentPage === 1 ? '#bdbdbd' : '#333333',
+              padding: 0.5,
+              width: '40px',
+              height: '40px',
+              '&:hover': {
+                backgroundColor: currentPage === 1 ? 'transparent' : '#f0f0f0',
+                transform: currentPage === 1 ? 'none' : 'scale(1.1)'
+              },
+              transition: 'all 0.2s ease-in-out'
+            }}
+          >
+            <FirstPageIcon fontSize="medium" />
+          </IconButton>
+          
+          {/* Предыдущая страница */}
+          <IconButton
+            size="small"
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            sx={{
+              color: currentPage === 1 ? '#bdbdbd' : '#333333',
+              padding: 0.5,
+              width: '40px',
+              height: '40px',
+              '&:hover': {
+                backgroundColor: currentPage === 1 ? 'transparent' : '#f0f0f0',
+                transform: currentPage === 1 ? 'none' : 'scale(1.1)'
+              },
+              transition: 'all 0.2s ease-in-out'
+            }}
+          >
+            <UpIcon fontSize="medium" />
+          </IconButton>
+          
+          {/* Следующая страница */}
+          <IconButton
+            size="small"
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            sx={{
+              color: currentPage === totalPages ? '#bdbdbd' : '#333333',
+              padding: 0.5,
+              width: '40px',
+              height: '40px',
+              '&:hover': {
+                backgroundColor: currentPage === totalPages ? 'transparent' : '#f0f0f0',
+                transform: currentPage === totalPages ? 'none' : 'scale(1.1)'
+              },
+              transition: 'all 0.2s ease-in-out'
+            }}
+          >
+            <DownIcon fontSize="medium" />
+          </IconButton>
+          
+          {/* Последняя страница */}
+          <IconButton
+            size="small"
+            onClick={() => onPageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            sx={{
+              color: currentPage === totalPages ? '#bdbdbd' : '#333333',
+              padding: 0.5,
+              width: '40px',
+              height: '40px',
+              '&:hover': {
+                backgroundColor: currentPage === totalPages ? 'transparent' : '#f0f0f0',
+                transform: currentPage === totalPages ? 'none' : 'scale(1.1)'
+              },
+              transition: 'all 0.2s ease-in-out'
+            }}
+          >
+            <LastPageIcon fontSize="medium" />
+          </IconButton>
+          </Box>
+        </Box>
+
+        {/* Разделитель */}
+        <Divider sx={{ margin: '8px 0' }} />
+
+        {/* Секция форматирования */}
+        {formattingOptions && onFormattingOptionsChange && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Размер шрифта */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconButton
+                size="small"
+                onClick={decreaseFontSize}
+                sx={{
+                  color: '#666666',
+                  padding: 0.5,
+                  width: '40px',
+                  height: '40px',
+                  '&:hover': { backgroundColor: '#f0f0f0' }
+                }}
+              >
+                <ZoomOutIcon fontSize="medium" />
+              </IconButton>
+              
+              <Typography variant="caption" sx={{ color: '#666666', fontSize: '10px', textAlign: 'center' }}>
+                {formattingOptions.fontSize}px
+              </Typography>
+              
+              <IconButton
+                size="small"
+                onClick={increaseFontSize}
+                sx={{
+                  color: '#666666',
+                  padding: 0.5,
+                  width: '40px',
+                  height: '40px',
+                  '&:hover': { backgroundColor: '#f0f0f0' }
+                }}
+              >
+                <ZoomInIcon fontSize="medium" />
+              </IconButton>
+            </Box>
+
+            {/* Шрифт */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconButton
+                size="small"
+                onClick={handleFontFamilyChange}
+                sx={{
+                  color: '#666666',
+                  padding: 0.5,
+                  width: '40px',
+                  height: '40px',
+                  '&:hover': { backgroundColor: '#f0f0f0' }
+                }}
+              >
+                <FontIcon fontSize="medium" />
+              </IconButton>
+            </Box>
 
 
-       </Box>
-     </Drawer>
-   );
- };
+          </Box>
+        )}
+      </Box>
+    </Drawer>
+  );
+};
 
 export default NavigationPanel;

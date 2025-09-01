@@ -16,15 +16,13 @@ import {
   Book as BookIcon,
   CloudUpload as UploadIcon,
   MenuBook as DictionaryIcon,
-  Settings as SettingsIcon,
-  Comment as CommentIcon,
-  Navigation as NavigationIcon
+  Comment as CommentIcon
 } from '@mui/icons-material';
 import { Book } from './types';
 import FileUpload from './components/FileUpload';
 import BookCatalog from './components/BookCatalog';
 import TextReader from './components/TextReader';
-import NavigationPanel from './components/NavigationPanel';
+
 
 
 import './App.css';
@@ -96,9 +94,7 @@ function App() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentTab, setCurrentTab] = useState(0);
   const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
-  const [isFormattingPanelOpen, setIsFormattingPanelOpen] = useState(false);
   const [isCommentsPanelOpen, setIsCommentsPanelOpen] = useState(false);
-  const [isNavigationPanelOpen, setIsNavigationPanelOpen] = useState(false);
   const [isDebugMode, setIsDebugMode] = useState(false);
 
   // Функция для определения размера шрифта заголовка
@@ -161,7 +157,7 @@ function App() {
 
   const handleBookSelect = (book: Book) => {
     setSelectedBook(book);
-    // Не меняем currentTab, так как у нас только 2 таба (0 и 1)
+    setCurrentTab(-1); // Убираем выделение с вкладок при выборе книги
   };
 
   const handleBookDelete = (bookId: string) => {
@@ -188,7 +184,8 @@ function App() {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
-    if (newValue !== 2) {
+    // Если переключаемся на каталог книг (таб 1), сбрасываем выбранную книгу
+    if (newValue === 1) {
       setSelectedBook(null);
     }
   };
@@ -253,106 +250,53 @@ function App() {
             </Typography>
             
             {/* Табы навигации */}
-            {!selectedBook && (
-              <Tabs
-                value={currentTab}
-                onChange={handleTabChange}
-                aria-label="navigation tabs"
-                sx={{ 
-                  ml: 3,
-                  '& .MuiTab-root': { 
-                    color: 'white',
-                    minHeight: 'auto',
-                    padding: '6px 16px'
-                  },
-                  '& .Mui-selected': {
-                    color: 'white',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '4px'
-                  },
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: 'white'
-                  }
+            <Tabs
+              value={currentTab}
+              onChange={handleTabChange}
+              aria-label="navigation tabs"
+              sx={{ 
+                ml: 3,
+                '& .MuiTab-root': { 
+                  color: 'white',
+                  minHeight: 'auto',
+                  padding: '6px 16px'
+                },
+                '& .Mui-selected': {
+                  color: '#1565c0',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  borderRadius: '4px',
+                  fontWeight: 600
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: 'white'
+                }
+              }}
+            >
+              <Tab
+                icon={<UploadIcon />}
+                label="ЗАГРУЗКА ФАЙЛОВ"
+                style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  fontWeight: 500,
+                  fontSize: '12px'
                 }}
-              >
-                <Tab
-                  icon={<UploadIcon />}
-                  label="ЗАГРУЗКА ФАЙЛОВ"
-                  style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontWeight: 500,
-                    fontSize: '12px'
-                  }}
-                />
-                <Tab
-                  icon={<BookIcon />}
-                  label="КАТАЛОГ КНИГ"
-                  style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontWeight: 500,
-                    fontSize: '12px'
-                  }}
-                />
-              </Tabs>
-            )}
+              />
+              <Tab
+                icon={<BookIcon />}
+                label="КАТАЛОГ КНИГ"
+                style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  fontWeight: 500,
+                  fontSize: '12px'
+                }}
+              />
+            </Tabs>
             
             {/* Кнопки навигации в заголовке */}
             {selectedBook && (
               <>
-                <Tabs
-                  value={currentTab}
-                  onChange={handleTabChange}
-                  aria-label="navigation tabs"
-                  sx={{ 
-                    '& .MuiTab-root': { 
-                      color: 'white',
-                      minHeight: 'auto',
-                      padding: '6px 16px'
-                    },
-                    '& .Mui-selected': {
-                      color: 'white',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '4px'
-                    }
-                  }}
-                >
-                  <Tab
-                    icon={<UploadIcon />}
-                    label="ЗАГРУЗКА"
-                    style={{
-                      fontFamily: 'Montserrat, sans-serif',
-                      fontWeight: 500,
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Tab
-                    icon={<BookIcon />}
-                    label="КАТАЛОГ"
-                    style={{
-                      fontFamily: 'Montserrat, sans-serif',
-                      fontWeight: 500,
-                      fontSize: '12px'
-                    }}
-                  />
-                </Tabs>
-                
-                {/* Кнопка настроек */}
-                <Button
-                  variant={isFormattingPanelOpen ? "contained" : "outlined"}
-                  startIcon={<SettingsIcon />}
-                  onClick={() => setIsFormattingPanelOpen(!isFormattingPanelOpen)}
-                  style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontWeight: 500,
-                    textTransform: 'none',
-                    color: 'white',
-                    borderColor: 'white',
-                    marginLeft: '16px'
-                  }}
-                  size="small"
-                >
-                  Настройки
-                </Button>
+
+
                 
                 {/* Кнопка словаря */}
                 <Button
@@ -372,23 +316,7 @@ function App() {
                   Словарь
                 </Button>
 
-                {/* Кнопка навигации */}
-                <Button
-                  variant={isNavigationPanelOpen ? "contained" : "outlined"}
-                  startIcon={<NavigationIcon />}
-                  onClick={() => setIsNavigationPanelOpen(!isNavigationPanelOpen)}
-                  style={{
-                    fontFamily: 'Montserrat, sans-serif',
-                    fontWeight: 500,
-                    textTransform: 'none',
-                    color: 'white',
-                    borderColor: 'white',
-                    marginLeft: '16px'
-                  }}
-                  size="small"
-                >
-                  Навигация
-                </Button>
+
 
                 {/* Кнопка комментариев */}
                 <Button
@@ -415,33 +343,26 @@ function App() {
                 <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           
 
-          {selectedBook ? (
-              // Режим чтения
-              <TextReader  
-                book={selectedBook} 
-                isDictionaryOpen={isDictionaryOpen}
-                onDictionaryToggle={() => setIsDictionaryOpen(!isDictionaryOpen)}
-                isFormattingPanelOpen={isFormattingPanelOpen}
-                onFormattingPanelToggle={() => setIsFormattingPanelOpen(!isFormattingPanelOpen)}
-                isCommentsPanelOpen={isCommentsPanelOpen}
-                onCommentsPanelToggle={() => setIsCommentsPanelOpen(!isCommentsPanelOpen)}
-                isNavigationPanelOpen={isNavigationPanelOpen}
-                onNavigationPanelToggle={() => setIsNavigationPanelOpen(!isNavigationPanelOpen)}
-              />
-                      ) : (
-              // Основной интерфейс
-              <Box className="container-debug container-content" data-container-name="CONTENT CONTAINER">
-              {currentTab === 0 ? (
-                <FileUpload onFileProcessed={handleFileProcessed} />
-              ) : (
-                <BookCatalog
-                  books={books}
-                  onBookSelect={handleBookSelect}
-                  onBookDelete={handleBookDelete}
-                />
-              )}
-            </Box>
-          )}
+          {/* Основной интерфейс с табами */}
+          {currentTab === 0 ? (
+            <FileUpload onFileProcessed={handleFileProcessed} />
+          ) : currentTab === 1 ? (
+            // Каталог книг
+            <BookCatalog
+              books={books}
+              onBookSelect={handleBookSelect}
+              onBookDelete={handleBookDelete}
+            />
+          ) : selectedBook ? (
+            // Режим чтения книги (когда currentTab = -1)
+            <TextReader  
+              book={selectedBook} 
+              isDictionaryOpen={isDictionaryOpen}
+              onDictionaryToggle={() => setIsDictionaryOpen(!isDictionaryOpen)}
+              isCommentsPanelOpen={isCommentsPanelOpen}
+              onCommentsPanelToggle={() => setIsCommentsPanelOpen(!isCommentsPanelOpen)}
+            />
+          ) : null}
         </Container>
       </Box>
     </ThemeProvider>

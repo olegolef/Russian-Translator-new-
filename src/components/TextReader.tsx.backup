@@ -2,9 +2,19 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import {
   Typography,
   Box,
+  Chip,
+  Divider,
+  CircularProgress,
+  Pagination,
+  TextField,
+  Button,
+  Tooltip,
   IconButton
 } from '@mui/material';
 import { 
+  MenuBook as DictionaryIcon,
+  NavigateBefore as PrevPageIcon,
+  NavigateNext as NextPageIcon,
   KeyboardArrowUp as UpIcon,
   KeyboardArrowDown as DownIcon
 } from '@mui/icons-material';
@@ -35,8 +45,6 @@ const TextReader: React.FC<TextReaderProps> = ({
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [translation, setTranslation] = useState<WordTranslation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [highlightedWordState, setHighlightedWordState] = useState<{word: string, timestamp: number} | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number, width: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(() => {
     // Восстанавливаем последнюю страницу из localStorage или используем 1
     const savedPage = localStorage.getItem(`book-last-page-${book.id}`);
@@ -70,38 +78,11 @@ const TextReader: React.FC<TextReaderProps> = ({
     localStorage.setItem('container-height', '1000');
     return 1000;
   }); // Высота контейнера в пикселях
-  const [forceUpdate, setForceUpdate] = useState(0); // Для принудительного обновления отображения
-
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStartX, setResizeStartX] = useState(0);
   const [resizeStartY, setResizeStartY] = useState(0);
   const [resizeStartWidth, setResizeStartWidth] = useState(0);
   const [resizeStartHeight, setResizeStartHeight] = useState(0);
-
-  // CSS стили для выделения слов
-  const highlightStyles = `
-    .single-click-highlight {
-      background-color: #1976d2 !important;
-      color: white !important;
-      padding: 1px 2px !important;
-      border-radius: 2px !important;
-      display: inline !important;
-      font-weight: bold !important;
-    }
-    
-    /* Более специфичный селектор */
-    .text-content-container .single-click-highlight,
-    .container-debug .single-click-highlight,
-    p .single-click-highlight,
-    div .single-click-highlight {
-      background-color: #1976d2 !important;
-      color: white !important;
-      padding: 1px 2px !important;
-      border-radius: 2px !important;
-      display: inline !important;
-      font-weight: bold !important;
-    }
-  `;
 
   // Функции для изменения ширины перетаскиванием
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -193,25 +174,20 @@ const TextReader: React.FC<TextReaderProps> = ({
   const selectedWordRef = useRef<SelectedWord | null>(null);
 
   // Функция для расчета позиции тултипа
-  const getTooltipStyle = useCallback((element: HTMLElement, clickX?: number, clickY?: number) => {
+  const getTooltipStyle = useCallback((element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    
     // Фиксированные размеры
     const leftPanelWidth = 80; // Ширина левой боковой панели
-    const tooltipWidth = 300; // Фиксированная ширина 300px
+    const marginLeft = 80; // Отступ от левого края (как в стилях контейнера)
     
-    // Рассчитываем позицию тултипа
-    let left: number;
-    let top: number;
+    // Рассчитываем позицию тултипа между панелью и контейнером
+    const left = leftPanelWidth + 10; // 10px отступ от левой панели
+    const availableWidth = 800 - leftPanelWidth - 20; // 800px - ширина контейнера, 20px для отступов
+    const tooltipWidth = availableWidth - 4; // Ширина на 4px меньше доступного пространства
     
-    if (clickX !== undefined && clickY !== undefined) {
-      // Используем позицию клика для более точного позиционирования
-      left = leftPanelWidth + 10; // 10px отступ от левой панели
-      top = Math.max(10, clickY - 50); // На уровне клика с небольшим отступом
-    } else {
-      // Fallback: позиционируем между панелью и контейнером
-      const rect = element.getBoundingClientRect();
-      left = leftPanelWidth + 10;
-      top = Math.max(10, rect.top - 50);
-    }
+    // Позиционируем тултип на уровне выделенного слова
+    const top = rect.top;
 
     return {
       position: 'fixed' as const,
@@ -228,373 +204,171 @@ const TextReader: React.FC<TextReaderProps> = ({
     return word.replace(/[.,!?;:()"'`]/g, '').toLowerCase().trim();
   }, []);
 
-  // Простая функция для выделения слова
-  const highlightWord = useCallback((text: string, word: string) => {
-    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escapedWord, 'g');
-    return text.replace(regex, `<span style="background-color: #1976d2; color: white; padding: 1px 2px; border-radius: 2px;">${word}</span>`);
-  }, []);
+  // Функция для выделения слова в тексте
+  const highlightWord = useCallback((element: HTMLElement, word: string) => {
+    const text = element.textContent || '';
+    const words = text.split(/\s+/);
+    let highlightedText = '';
+    let currentIndex = 0;
+    
+    words.forEach((w, index) => {
+      const cleanedW = cleanWord(w);
+      const cleanedTarget = cleanWord(word);
+      
+      if (cleanedW === cleanedTarget) {
+        // Выделяем слово синим цветом
+        highlightedText += `<span style="background-color: #1976d2; color: white; padding: 1px 2px; border-radius: 2px;">${w}</span>`;
+      } else {
+        highlightedText += w;
+      }
+      
+      // Добавляем пробел между словами (кроме последнего)
+      if (index < words.length - 1) {
+        highlightedText += ' ';
+      }
+    });
+    
+    return highlightedText;
+  }, [cleanWord]);
 
-  // Простая функция для обработки клика по слову
+  // Обработчик одного клика по слову для перевода
   const handleWordClick = useCallback(async (event: React.MouseEvent<HTMLParagraphElement>) => {
-    console.log('=== КЛИК ПО СЛОВУ ===');
     event.preventDefault();
     event.stopPropagation();
     
-
-    
-    // Сохраняем ссылку на элемент сразу
-    const targetElement = event.currentTarget;
-    console.log('Элемент сохранен:', targetElement);
-    
-    // Проверяем, есть ли выделение текста
+    // Получаем выделенный текст
     const selection = window.getSelection();
     const selectedText = selection?.toString().trim();
     
+    // Если есть выделение, не обрабатываем клик (это будет обработано handleMouseUp)
     if (selectedText && selectedText.length > 0) {
-      return; // Если есть выделение, не обрабатываем клик
+      return;
     }
     
-    // Получаем позицию клика в тексте
-    const range = document.caretRangeFromPoint(event.clientX, event.clientY);
-    if (!range) return;
+    // Получаем слово под курсором
+    const text = event.currentTarget.textContent || '';
+    const clickX = event.clientX - event.currentTarget.getBoundingClientRect().left;
     
-    const textNode = range.startContainer;
-    if (textNode.nodeType !== Node.TEXT_NODE) return;
+    // Находим слово по позиции клика
+    const words = text.split(/\s+/);
+    let currentX = 0;
+    let clickedWord = '';
     
-    const charIndex = range.startOffset;
-    const text = textNode.textContent || '';
-    
-    // Находим слово вокруг позиции клика
-    let wordStart = charIndex;
-    let wordEnd = charIndex;
-    
-    // Ищем начало слова
-    while (wordStart > 0 && /\S/.test(text[wordStart - 1])) {
-      wordStart--;
+    for (const word of words) {
+      const wordWidth = word.length * 8; // Примерная ширина
+      if (currentX <= clickX && clickX <= currentX + wordWidth) {
+        clickedWord = word;
+        break;
+      }
+      currentX += wordWidth + 8; // +8 для пробела
     }
     
-    // Ищем конец слова
-    while (wordEnd < text.length && /\S/.test(text[wordEnd])) {
-      wordEnd++;
-    }
+    if (!clickedWord || clickedWord.length < 2) return;
     
-    // Извлекаем слово
-    const clickedWord = text.substring(wordStart, wordEnd);
-    console.log('Найденное слово:', clickedWord);
-    console.log('Позиция в тексте:', wordStart, '-', wordEnd);
-    if (clickedWord.length < 2) return;
-    
-    // Очищаем слово от знаков препинания
     const cleanedWord = cleanWord(clickedWord);
     if (cleanedWord.length < 2) return;
-    
-    // Применяем выделение к слову СРАЗУ
-    console.log('=== ВЫДЕЛЕНИЕ СЛОВА ===');
-    console.log('Элемент для выделения:', targetElement);
-    console.log('Слово для выделения:', cleanedWord);
-    
-    // Проверяем, что элемент все еще существует
-    if (!targetElement) {
-      console.error('Элемент не найден для выделения');
-      return;
-    }
-    
-    // Проверяем, что элемент содержит текст
-    if (!targetElement.textContent || targetElement.textContent.trim().length === 0) {
-      console.error('Элемент не содержит текст для выделения');
-      return;
-    }
-    
-    // Сохраняем состояние выделения в React state
-    console.log('Сохраняем состояние выделения для слова:', cleanedWord);
-    setHighlightedWordState({
-      word: cleanedWord,
-      timestamp: Date.now()
-    });
-    
-    // Выделение остается до клика в другом месте
-    console.log('Выделение сохранено в state - будет убрано при клике в другом месте');
-    
-    // Вычисляем позицию тултипа ОДИН РАЗ
-    const tooltipStyle = getTooltipStyle(targetElement, event.clientX, event.clientY);
-    const position = {
-      x: tooltipStyle.left,
-      y: tooltipStyle.top,
-      width: tooltipStyle.width
-    };
-    
-    // Сохраняем данные о выбранном слове (только для тултипа)
+
+    // Выделяем слово в тексте
+    const highlightedText = highlightWord(event.currentTarget, clickedWord);
+    event.currentTarget.innerHTML = highlightedText;
+
     const selectedWordData: SelectedWord = {
       word: cleanedWord,
       originalWord: clickedWord,
-      element: event.currentTarget,
-      clickX: event.clientX,
-      clickY: event.clientY
+      element: event.currentTarget
     };
-    
-    // Обновляем состояние одним вызовом, чтобы избежать множественных рендерингов
+
     setSelectedWord(selectedWordData);
-    setTooltipPosition(position);
     selectedWordRef.current = selectedWordData;
-    
-    // Получаем перевод асинхронно, не блокируя UI
+
     setIsLoading(true);
-    translationService.translateWord(cleanedWord)
-      .then(translationData => {
-        setTranslation(translationData);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Ошибка при переводе слова:', error);
-        setTranslation(null);
-        setIsLoading(false);
-      });
-  }, [cleanWord]);
 
-
-
-
-
-
-
-  // Функция для показа уведомлений
-  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    // Удаляем все существующие уведомления
-    const existingNotifications = document.querySelectorAll('.app-notification');
-    existingNotifications.forEach(notification => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    });
-
-    const colors = {
-      success: '#4caf50',
-      error: '#f44336',
-      info: '#2196f3'
-    };
-
-    const notification = document.createElement('div');
-    notification.className = 'app-notification';
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${colors[type]};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 4px;
-      font-family: 'Fira Sans, sans-serif';
-      font-size: 14px;
-      z-index: 9999;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      animation: slideIn 0.3s ease-out;
-      max-width: 300px;
-      word-wrap: break-word;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Удаляем уведомление через 3 секунды
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 3000);
-  }, []);
-
-  // Функция для добавления слова в словарь
-  const addWordToDictionary = useCallback(async (word: string, originalWord: string, translation: WordTranslation) => {
-    console.log('=== ДОБАВЛЕНИЕ СЛОВА В СЛОВАРЬ ===');
-    console.log('Слово:', word);
-    console.log('Оригинальное слово:', originalWord);
-    console.log('Перевод:', translation);
-    console.log('ID книги:', book.id);
-    console.log('Текущая страница:', currentPage);
-    
-    const newWord: UserDictionaryWord = {
-      id: Date.now().toString(),
-      word: word,
-      originalWord: originalWord,
-      translation: translation,
-      position: 0,
-      bookId: book.id,
-      pageNumber: currentPage,
-      lastEdited: new Date().toISOString()
-    };
-
-    console.log('Новое слово для словаря:', newWord);
-    console.log('Текущий словарь (количество слов):', userDictionary.length);
-    console.log('Слова в текущей книге:', userDictionary.filter(w => w.bookId === book.id).length);
-
-    const updatedDictionary = [...userDictionary, newWord];
-    setUserDictionary(updatedDictionary);
-    
     try {
-      localStorage.setItem('userDictionary', JSON.stringify(updatedDictionary));
-      console.log('Слово успешно добавлено в словарь:', word);
-      console.log('Обновленный словарь (количество слов):', updatedDictionary.length);
-      
-      // Показываем уведомление пользователю
-      showNotification(`Слово "${originalWord}" добавлено в словарь`, 'success');
-      
-      // Принудительно обновляем отображение, чтобы показать выделение
-      setForceUpdate(prev => prev + 1);
-      
+      const translationData = await translationService.translateWord(cleanedWord);
+      setTranslation(translationData);
     } catch (error) {
-      console.error('Ошибка при сохранении словаря:', error);
-      showNotification('Ошибка при сохранении словаря. Попробуйте еще раз.', 'error');
+      console.error('Ошибка при переводе слова:', error);
+      setTranslation(null);
+    } finally {
+      setIsLoading(false);
     }
-  }, [userDictionary, book.id, currentPage, showNotification]);
+  }, [cleanWord, highlightWord]);
+
+
 
   // Обработчик двойного клика для добавления в словарь
   const handleDoubleClick = useCallback(async (event: React.MouseEvent<HTMLParagraphElement>) => {
     event.preventDefault();
     event.stopPropagation();
     
-    console.log('=== ДВОЙНОЙ КЛИК ОБРАБОТАН ===');
-    console.log('Время:', new Date().toLocaleTimeString());
-    console.log('Книга:', book.title, '(ID:', book.id, ')');
-    console.log('Текущая страница:', currentPage);
-    console.log('Элемент:', event.currentTarget);
-    console.log('Координаты клика:', event.clientX, event.clientY);
-    console.log('Текст элемента:', event.currentTarget.textContent?.substring(0, 100) + '...');
-    
     // Получаем выделенный текст
     const selection = window.getSelection();
     const selectedText = selection?.toString().trim();
     
-    console.log('Выделенный текст:', selectedText);
-    
-    // Если есть выделение, проверяем, не является ли оно одним словом
+    // Если есть выделение, не обрабатываем двойной клик (это будет обработано handleMouseUp)
     if (selectedText && selectedText.length > 0) {
-      // Если выделено одно слово, обрабатываем его как двойной клик
-      const words = selectedText.split(/\s+/);
-      if (words.length === 1 && words[0].length >= 2) {
-        console.log('Выделено одно слово, обрабатываем как двойной клик:', words[0]);
-        const cleanedWord = cleanWord(words[0]);
-        
-        // Проверяем, не добавлено ли уже это слово в словарь
-        const existingWord = userDictionary.find(w => 
-          w.word.toLowerCase() === cleanedWord.toLowerCase() && 
-          w.bookId === book.id
-        );
-        
-        if (existingWord) {
-          console.log('Слово уже в словаре');
-          showNotification(`Слово "${words[0]}" уже добавлено в словарь!`, 'info');
-          return;
-        }
-
-        // Если уже есть перевод для этого слова, добавляем в словарь
-        if (translation && selectedWord && selectedWord.word === cleanedWord) {
-          console.log('Используем существующий перевод для выделенного слова');
-          await addWordToDictionary(selectedWord.word, selectedWord.originalWord, translation);
-        } else {
-          console.log('Получаем новый перевод для выделенного слова');
-          // Если нет перевода, сначала получаем его
-          const selectedWordData: SelectedWord = {
-            word: cleanedWord,
-            originalWord: words[0],
-            element: event.currentTarget
-          };
-
-          setSelectedWord(selectedWordData);
-          selectedWordRef.current = selectedWordData;
-
-          setIsLoading(true);
-
-          try {
-            const translationData = await translationService.translateWord(cleanedWord);
-            console.log('Получен перевод для выделенного слова:', translationData);
-            setTranslation(translationData);
-            
-            // Добавляем в словарь после получения перевода
-            await addWordToDictionary(cleanedWord, words[0], translationData);
-            
-            setSelectedWord(null);
-            setTranslation(null);
-          } catch (error) {
-            console.error('Ошибка при переводе выделенного слова:', error);
-            setTranslation(null);
-            showNotification('Ошибка при переводе слова. Попробуйте еще раз.', 'error');
-          } finally {
-            setIsLoading(false);
-          }
-        }
-        return;
-      } else {
-        console.log('Выделено несколько слов или фраза, пропускаем двойной клик');
-        return;
-      }
+      return;
     }
     
-    // Получаем слово под курсором - используем простой метод
+    // Получаем слово под курсором
     const text = event.currentTarget.textContent || '';
     const clickX = event.clientX - event.currentTarget.getBoundingClientRect().left;
     
-    console.log('Текст элемента:', text);
-    console.log('Позиция клика X:', clickX);
-    
-    // Простой метод: разбиваем текст на слова и находим слово по примерной позиции
+    // Находим слово по позиции клика
     const words = text.split(/\s+/);
-    const averageCharWidth = formattingOptions.fontSize * 0.6; // Примерная ширина символа
-    const clickedCharIndex = Math.floor(clickX / averageCharWidth);
-    
+    let currentX = 0;
     let clickedWord = '';
-    let currentCharIndex = 0;
     
     for (const word of words) {
-      const wordLength = word.length;
-      if (currentCharIndex <= clickedCharIndex && clickedCharIndex <= currentCharIndex + wordLength) {
+      const wordWidth = word.length * 8; // Примерная ширина
+      if (currentX <= clickX && clickX <= currentX + wordWidth) {
         clickedWord = word;
         break;
       }
-      currentCharIndex += wordLength + 1; // +1 для пробела
+      currentX += wordWidth + 8; // +8 для пробела
     }
     
-    console.log('Найденное слово:', clickedWord);
-    
-    if (!clickedWord || clickedWord.length < 2) {
-      console.log('Слово не найдено или слишком короткое');
-      return;
-    }
+    if (!clickedWord || clickedWord.length < 2) return;
     
     const cleanedWord = cleanWord(clickedWord);
-    if (cleanedWord.length < 2) {
-      console.log('Очищенное слово слишком короткое');
-      return;
-    }
-    
-    console.log('Очищенное слово:', cleanedWord);
+    if (cleanedWord.length < 2) return;
 
-    // Проверяем, не добавлено ли уже это слово в словарь
-    const existingWord = userDictionary.find(w => 
-      w.word.toLowerCase() === cleanedWord.toLowerCase() && 
-      w.bookId === book.id
-    );
-    
-    if (existingWord) {
-      console.log('Слово уже в словаре');
-      showNotification(`Слово "${clickedWord}" уже добавлено в словарь!`, 'info');
-      return;
-    }
-
-
+    // Выделяем слово в тексте
+    const highlightedText = highlightWord(event.currentTarget, clickedWord);
+    event.currentTarget.innerHTML = highlightedText;
 
     // Если уже есть перевод для этого слова, добавляем в словарь
     if (translation && selectedWord && selectedWord.word === cleanedWord) {
-      console.log('Используем существующий перевод');
-      await addWordToDictionary(selectedWord.word, selectedWord.originalWord, translation);
+      // Добавляем в словарь напрямую
+      const newWord: UserDictionaryWord = {
+        id: Date.now().toString(),
+        word: selectedWord.word,
+        originalWord: selectedWord.originalWord,
+        translation: translation,
+        position: 0,
+        bookId: book.id,
+        pageNumber: currentPage,
+        lastEdited: new Date().toISOString()
+      };
+
+      const updatedDictionary = [...userDictionary, newWord];
+      setUserDictionary(updatedDictionary);
+      
+      try {
+        localStorage.setItem('userDictionary', JSON.stringify(updatedDictionary));
+        console.log('Слово добавлено в словарь:', selectedWord.word);
+      } catch (error) {
+        console.error('Ошибка при сохранении словаря:', error);
+      }
+
+      setSelectedWord(null);
+      setTranslation(null);
     } else {
-      console.log('Получаем новый перевод');
       // Если нет перевода, сначала получаем его
       const selectedWordData: SelectedWord = {
         word: cleanedWord,
         originalWord: clickedWord,
-        element: event.currentTarget,
-        clickX: event.clientX,
-        clickY: event.clientY
+        element: event.currentTarget
       };
 
       setSelectedWord(selectedWordData);
@@ -604,23 +378,42 @@ const TextReader: React.FC<TextReaderProps> = ({
 
       try {
         const translationData = await translationService.translateWord(cleanedWord);
-        console.log('Получен перевод:', translationData);
         setTranslation(translationData);
         
         // Добавляем в словарь после получения перевода
-        await addWordToDictionary(cleanedWord, clickedWord, translationData);
-        
-        setSelectedWord(null);
-        setTranslation(null);
+        setTimeout(() => {
+          const newWord: UserDictionaryWord = {
+            id: Date.now().toString(),
+            word: selectedWordData.word,
+            originalWord: selectedWordData.originalWord,
+            translation: translationData,
+            position: 0,
+            bookId: book.id,
+            pageNumber: currentPage,
+            lastEdited: new Date().toISOString()
+          };
+
+          const updatedDictionary = [...userDictionary, newWord];
+          setUserDictionary(updatedDictionary);
+          
+          try {
+            localStorage.setItem('userDictionary', JSON.stringify(updatedDictionary));
+            console.log('Слово добавлено в словарь:', selectedWordData.word);
+          } catch (error) {
+            console.error('Ошибка при сохранении словаря:', error);
+          }
+
+          setSelectedWord(null);
+          setTranslation(null);
+        }, 100);
       } catch (error) {
         console.error('Ошибка при переводе слова:', error);
         setTranslation(null);
-        showNotification('Ошибка при переводе слова. Попробуйте еще раз.', 'error');
       } finally {
         setIsLoading(false);
       }
     }
-  }, [cleanWord, translation, selectedWord, userDictionary, book.id, currentPage, addWordToDictionary]);
+  }, [cleanWord, highlightWord, translation, selectedWord, userDictionary, book.id, currentPage]);
 
   // Обработчик клика вне слова
   const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -676,47 +469,22 @@ const TextReader: React.FC<TextReaderProps> = ({
 
   // Обработчик удаления из словаря
   const handleDeleteFromDictionary = useCallback((wordId: string) => {
-    console.log('=== УДАЛЕНИЕ ИЗ СЛОВАРЯ ===');
-    console.log('Получен wordId:', wordId);
-    console.log('Текущий словарь:', userDictionary.length, 'слов');
-    
     const wordToDelete = userDictionary.find(w => w.id === wordId);
-    if (!wordToDelete) {
-      console.log('Слово с таким ID не найдено');
-      return;
-    }
-    
-    console.log('Найдено слово для удаления:', wordToDelete);
+    if (!wordToDelete) return;
 
-    // Первое подтверждение
-    const firstConfirm = window.confirm(
-      `Вы действительно хотите удалить слово "${wordToDelete.originalWord}" из словаря?\n\nПереводы:\n${wordToDelete.translation.meanings.map(m => `• ${m}`).join('\n')}`
+    const confirmDelete = window.confirm(
+      `Удалить слово "${wordToDelete.originalWord}" со всеми переводами?\n\nПереводы:\n${wordToDelete.translation.meanings.map(m => `• ${m}`).join('\n')}`
     );
 
-    if (!firstConfirm) return;
-
-    // Второе подтверждение
-    const secondConfirm = window.confirm(
-      `Финальное подтверждение: удалить слово "${wordToDelete.originalWord}" со всеми переводами?\n\nЭто действие нельзя отменить.`
-    );
-
-    if (secondConfirm) {
+    if (confirmDelete) {
       const updatedDictionary = userDictionary.filter(w => w.id !== wordId);
       setUserDictionary(updatedDictionary);
       
       try {
         localStorage.setItem('userDictionary', JSON.stringify(updatedDictionary));
         console.log('Слово удалено из словаря:', wordToDelete.word);
-        
-        // Показываем уведомление об удалении
-        showNotification(`Слово "${wordToDelete.originalWord}" удалено из словаря`, 'error');
-        
-        // Принудительно обновляем отображение, чтобы убрать выделение
-        setForceUpdate(prev => prev + 1);
-        
       } catch (error) {
         console.error('Ошибка при сохранении словаря:', error);
-        showNotification('Ошибка при удалении слова из словаря. Попробуйте еще раз.', 'error');
       }
     }
   }, [userDictionary]);
@@ -746,38 +514,10 @@ const TextReader: React.FC<TextReaderProps> = ({
 
   // Обработчик клика по контейнеру
   const handleContainerClick = useCallback((event: React.MouseEvent) => {
-    // Убираем выделение только при клике по самому контейнеру, а не по тексту
     if (event.target === event.currentTarget) {
       setSelectedWord(null);
       setTranslation(null);
-      setTooltipPosition(null);
-      setHighlightedWordState(null);
-      console.log('Выделение убрано при клике в другом месте');
     }
-  }, []);
-
-  // Обработчик клика по документу для убирания выделения
-  useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
-      // Проверяем, что клик не по тултипу и не по выделенному слову
-      const target = event.target as HTMLElement;
-      const isTooltip = target.closest('[data-testid="translation-tooltip"]');
-      const isHighlightedWord = target.closest('.single-click-highlight');
-      
-      if (!isTooltip && !isHighlightedWord) {
-        setSelectedWord(null);
-        setTranslation(null);
-        setTooltipPosition(null);
-        setHighlightedWordState(null);
-        console.log('Выделение убрано при клике в другом месте');
-      }
-    };
-
-    document.addEventListener('click', handleDocumentClick);
-    
-    return () => {
-      document.removeEventListener('click', handleDocumentClick);
-    };
   }, []);
 
   // Обработчик выделения текста для комментария
@@ -827,13 +567,8 @@ const TextReader: React.FC<TextReaderProps> = ({
     
     try {
       localStorage.setItem(`book-comments-${book.id}`, JSON.stringify(updatedComments));
-      
-              // Показываем уведомление о добавлении комментария
-        showNotification('Комментарий добавлен', 'info');
-      
     } catch (error) {
       console.error('Ошибка при сохранении комментариев:', error);
-      showNotification('Ошибка при сохранении комментария. Попробуйте еще раз.', 'error');
     }
 
     setSelectedTextForComment('');
@@ -845,31 +580,18 @@ const TextReader: React.FC<TextReaderProps> = ({
     const commentToDelete = comments.find(c => c.id === commentId);
     if (!commentToDelete) return;
 
-    // Первое подтверждение
-    const firstConfirm = window.confirm(
-      `Вы действительно хотите удалить комментарий?\n\nВыделенный текст: "${commentToDelete.selectedText}"\nКомментарий: "${commentToDelete.comment}"`
+    const confirmDelete = window.confirm(
+      `Удалить комментарий?\n\nВыделенный текст: "${commentToDelete.selectedText}"\nКомментарий: "${commentToDelete.comment}"`
     );
 
-    if (!firstConfirm) return;
-
-    // Второе подтверждение
-    const secondConfirm = window.confirm(
-      `Финальное подтверждение: удалить комментарий?\n\nЭто действие нельзя отменить.`
-    );
-
-    if (secondConfirm) {
+    if (confirmDelete) {
       const updatedComments = comments.filter(c => c.id !== commentId);
       setComments(updatedComments);
       
       try {
         localStorage.setItem(`book-comments-${book.id}`, JSON.stringify(updatedComments));
-        
-        // Показываем уведомление об удалении
-        showNotification('Комментарий удален', 'error');
-        
       } catch (error) {
         console.error('Ошибка при сохранении комментариев:', error);
-        showNotification('Ошибка при удалении комментария. Попробуйте еще раз.', 'error');
       }
     }
   }, [comments, book.id]);
@@ -907,105 +629,33 @@ const TextReader: React.FC<TextReaderProps> = ({
       (showOnlyCurrentPageComments || isCommentsPanelOpen)
     );
 
-    // Получаем слова из словаря для текущей книги
-    const dictionaryWords = userDictionary.filter(word => word.bookId === book.id);
-
-    // Если нет комментариев, слов из словаря и выделенного слова, возвращаем обычный текст
-    if (currentPageComments.length === 0 && dictionaryWords.length === 0 && !highlightedWordState) {
+    if (currentPageComments.length === 0) {
       return pageText;
     }
 
-    // Создаем массив всех выделений (комментарии + слова из словаря + одинарный клик)
-    const allHighlights: Array<{
-      startIndex: number;
-      endIndex: number;
-      type: 'comment' | 'dictionary' | 'single-click';
-      color: string;
-      data: any;
-    }> = [];
-
-    // Добавляем комментарии
-    currentPageComments.forEach(comment => {
-      allHighlights.push({
-        startIndex: comment.startIndex,
-        endIndex: comment.endIndex,
-        type: 'comment',
-        color: comment.color,
-        data: comment
-      });
-    });
-
-    // Добавляем слова из словаря
-    dictionaryWords.forEach(word => {
-      // Ищем все вхождения слова в тексте
-      const wordRegex = new RegExp(`\\b${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      let match;
-      
-      while ((match = wordRegex.exec(pageText)) !== null) {
-        allHighlights.push({
-          startIndex: match.index,
-          endIndex: match.index + match[0].length,
-          type: 'dictionary',
-          color: '#FF9800', // Оранжевый цвет для слов из словаря
-          data: word
-        });
-      }
-    });
-
-    // Добавляем выделенное слово (синее выделение)
-    if (highlightedWordState) {
-      const wordRegex = new RegExp(`\\b${highlightedWordState.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      let match;
-      
-      while ((match = wordRegex.exec(pageText)) !== null) {
-        allHighlights.push({
-          startIndex: match.index,
-          endIndex: match.index + match[0].length,
-          type: 'single-click',
-          color: '#1976d2', // Синий цвет для одинарного клика
-          data: highlightedWordState
-        });
-      }
-    }
-
-    // Если нет выделений, возвращаем обычный текст
-    if (allHighlights.length === 0) {
-      return pageText;
-    }
-
-    // Сортируем все выделения по позиции начала
-    const sortedHighlights = allHighlights.sort((a, b) => a.startIndex - b.startIndex);
+    // Сортируем комментарии по позиции начала
+    const sortedComments = [...currentPageComments].sort((a, b) => a.startIndex - b.startIndex);
     
     let result = '';
     let lastIndex = 0;
 
-    sortedHighlights.forEach(highlight => {
-      // Добавляем текст до выделения
-      result += pageText.substring(lastIndex, highlight.startIndex);
+    sortedComments.forEach(comment => {
+      // Добавляем текст до комментария
+      result += pageText.substring(lastIndex, comment.startIndex);
       
       // Добавляем выделенный текст
-      if (highlight.type === 'comment') {
-        result += `<span class="comment-highlight" style="background-color: ${highlight.color};">`;
-        result += pageText.substring(highlight.startIndex, highlight.endIndex);
-        result += '</span>';
-      } else if (highlight.type === 'dictionary') {
-        result += `<span class="dictionary-word-highlight" title="Слово из словаря: ${highlight.data.originalWord}">`;
-        result += pageText.substring(highlight.startIndex, highlight.endIndex);
-        result += '</span>';
-      } else if (highlight.type === 'single-click') {
-        result += `<span class="single-click-highlight">`;
-        result += pageText.substring(highlight.startIndex, highlight.endIndex);
-        result += '</span>';
-      }
+      result += `<span style="background-color: ${comment.color}; padding: 2px 4px; border-radius: 3px;">`;
+      result += pageText.substring(comment.startIndex, comment.endIndex);
+      result += '</span>';
       
-      lastIndex = highlight.endIndex;
+      lastIndex = comment.endIndex;
     });
 
     // Добавляем оставшийся текст
     result += pageText.substring(lastIndex);
     
     return result;
-  }, [getCurrentPageText, comments, currentPage, showOnlyCurrentPageComments, isCommentsPanelOpen, userDictionary, book.id, forceUpdate, highlightedWordState]);
+  }, [getCurrentPageText, comments, currentPage, showOnlyCurrentPageComments, isCommentsPanelOpen]);
 
   // Функция для рендеринга обычного текста с форматированием
   const renderNormalText = useCallback((text: string) => {
@@ -1099,7 +749,6 @@ const TextReader: React.FC<TextReaderProps> = ({
       return (
         <div
           dangerouslySetInnerHTML={{ __html: highlightedText }}
-          onClick={handleWordClick}
           onDoubleClick={handleDoubleClick}
           style={{
             cursor: 'pointer',
@@ -1108,28 +757,13 @@ const TextReader: React.FC<TextReaderProps> = ({
             whiteSpace: 'normal',
             wordBreak: 'break-word'
           }}
-          ref={(el) => {
-            if (el) {
-              // Добавляем обработчики ко всем дочерним элементам
-              const addEventListeners = () => {
-                const paragraphs = el.querySelectorAll('p');
-                
-                paragraphs.forEach((p) => {
-                  p.addEventListener('dblclick', handleDoubleClick as any);
-                });
-              };
-              
-              // Добавляем обработчики после рендеринга
-              setTimeout(addEventListeners, 0);
-            }
-          }}
         />
       );
     } else {
       // Иначе рендерим обычный текст
       return renderNormalText(highlightedText);
     }
-  }, [createHighlightedText, handleWordClick, handleDoubleClick, renderNormalText]);
+  }, [createHighlightedText, handleDoubleClick, renderNormalText]);
 
   // Загружаем словарь из localStorage при монтировании
   useEffect(() => {
@@ -1143,8 +777,6 @@ const TextReader: React.FC<TextReaderProps> = ({
       console.error('Ошибка при загрузке словаря:', error);
     }
   }, []);
-
-
 
   // Загружаем комментарии из localStorage при монтировании
   useEffect(() => {
@@ -1237,9 +869,7 @@ const TextReader: React.FC<TextReaderProps> = ({
   }, [comments, showOnlyCurrentPageComments, currentPage]);
 
   return (
-    <>
-      <style>{highlightStyles}</style>
-      <Box
+    <Box
               sx={{
           height: '100vh',
           overflow: 'visible',
@@ -1301,7 +931,7 @@ const TextReader: React.FC<TextReaderProps> = ({
 
 
           
-          <Typography
+                <Typography
             variant="body1"
             sx={{
               fontFamily: formattingOptions.fontFamily,
@@ -1316,7 +946,7 @@ const TextReader: React.FC<TextReaderProps> = ({
             }}
           >
             {renderText()}
-          </Typography>
+        </Typography>
 
         {/* Индикатор текущей страницы с навигацией */}
         <Box
@@ -1451,19 +1081,20 @@ const TextReader: React.FC<TextReaderProps> = ({
       </Box>
 
       {/* Тултип с переводом - рендерим вне контейнера */}
-      {selectedWord && tooltipPosition && (
+      {selectedWord && (
         <TranslationTooltip
           translation={translation}
-          position={tooltipPosition}
+          position={{
+            x: getTooltipStyle(selectedWord.element).left,
+            y: getTooltipStyle(selectedWord.element).top,
+            width: getTooltipStyle(selectedWord.element).width
+          }}
           isLoading={isLoading}
-                      onClose={() => {
-              setSelectedWord(null);
-              setTranslation(null);
-              setTooltipPosition(null);
-              setHighlightedWordState(null);
-              selectedWordRef.current = null;
-              console.log('Выделение убрано при закрытии тултипа');
-            }}
+          onClose={() => {
+            setSelectedWord(null);
+            setTranslation(null);
+            selectedWordRef.current = null;
+          }}
         />
       )}
 
@@ -1500,6 +1131,7 @@ const TextReader: React.FC<TextReaderProps> = ({
             }}
           />
         </Box>
+      </Box>
 
       {/* Панель словаря */}
       <UserDictionary
@@ -1556,7 +1188,6 @@ const TextReader: React.FC<TextReaderProps> = ({
         onSave={handleAddComment}
       />
     </Box>
-    </>
   );
 };
 
