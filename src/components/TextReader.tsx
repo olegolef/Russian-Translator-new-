@@ -306,6 +306,15 @@ const TextReader: React.FC<TextReaderProps> = ({
       return;
     }
     
+    // Проверяем, не выделено ли уже это слово
+    if (highlightedWordState && highlightedWordState.word === cleanedWord) {
+      console.log('Слово уже выделено, убираем выделение');
+      setHighlightedWordState(null);
+      setSelectedWord(null);
+      setTranslation(null);
+      return;
+    }
+    
     // Сохраняем состояние выделения в React state
     console.log('Сохраняем состояние выделения для слова:', cleanedWord);
     setHighlightedWordState({
@@ -350,7 +359,7 @@ const TextReader: React.FC<TextReaderProps> = ({
         setTranslation(null);
         setIsLoading(false);
       });
-  }, [cleanWord]);
+  }, [cleanWord, highlightedWordState]);
 
 
 
@@ -632,18 +641,18 @@ const TextReader: React.FC<TextReaderProps> = ({
       return;
     }
     
+    // Снимаем выделение с предыдущего слова
+    if (highlightedWordState) {
+      console.log('Выделение убрано при клике в другом месте');
+      setHighlightedWordState(null);
+    }
+    
     if (selectedWordRef.current) {
-      // Снимаем выделение с предыдущего слова
-      if (selectedWordRef.current.element) {
-        const originalText = selectedWordRef.current.element.textContent || '';
-        selectedWordRef.current.element.innerHTML = originalText;
-      }
-      
       setSelectedWord(null);
       setTranslation(null);
       selectedWordRef.current = null;
     }
-  }, []);
+  }, [highlightedWordState]);
 
   // Обработчик добавления слова в словарь
   const handleAddToDictionary = useCallback(() => {
@@ -935,13 +944,16 @@ const TextReader: React.FC<TextReaderProps> = ({
       });
     });
 
-    // Добавляем слова из словаря
+    // Добавляем слова из словаря - только первое вхождение каждого слова
+    const processedWords = new Set<string>();
     dictionaryWords.forEach(word => {
-      // Ищем все вхождения слова в тексте
-      const wordRegex = new RegExp(`\\b${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      let match;
+      if (processedWords.has(word.word.toLowerCase())) return;
       
-      while ((match = wordRegex.exec(pageText)) !== null) {
+      // Ищем первое вхождение слова в тексте
+      const wordRegex = new RegExp(`\\b${word.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      const match = wordRegex.exec(pageText);
+      
+      if (match) {
         allHighlights.push({
           startIndex: match.index,
           endIndex: match.index + match[0].length,
@@ -949,15 +961,16 @@ const TextReader: React.FC<TextReaderProps> = ({
           color: '#FF9800', // Оранжевый цвет для слов из словаря
           data: word
         });
+        processedWords.add(word.word.toLowerCase());
       }
     });
 
-    // Добавляем выделенное слово (синее выделение)
+    // Добавляем выделенное слово (синее выделение) - только одно вхождение
     if (highlightedWordState) {
-      const wordRegex = new RegExp(`\\b${highlightedWordState.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-      let match;
+      const wordRegex = new RegExp(`\\b${highlightedWordState.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      const match = wordRegex.exec(pageText);
       
-      while ((match = wordRegex.exec(pageText)) !== null) {
+      if (match) {
         allHighlights.push({
           startIndex: match.index,
           endIndex: match.index + match[0].length,
